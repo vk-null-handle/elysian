@@ -1,0 +1,11 @@
+BasedOnStyle: LLVM
+SortIncludes: Never
+AllowShortFunctionsOnASingleLine: None
+ColumnLimit: 0
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+IndentPPDirectives: AfterHash
+IndentWidth: 4
+UseTab: Always
+TabWidth: 4
+AlignConsecutiveDeclarations: None

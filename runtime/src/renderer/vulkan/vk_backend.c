@@ -6,6 +6,9 @@
 static VulkanContext vkcontext;
 
 b8 vulkan_backend_init(Window* window) {
+	// TODO: custom allocator
+	vkcontext.allocator = 0;
+
 	static const char* layers[] = {"VK_LAYER_KHRONOS_validation"};
 	u32 n_instance_exts;
 	const char** exts = win_get_vk_instance_ext(&n_instance_exts);
@@ -29,7 +32,10 @@ b8 vulkan_backend_init(Window* window) {
 	};
 
 	VK_CHECK(vkCreateInstance(&inst_info, vkcontext.allocator, &vkcontext.instance.handle));
-	LOG_DEBUG("Created instance");
+	LOG_DEBUG("Created Vulkan instance");
+
+	VK_CHECK(win_create_vk_surface(window, vkcontext.instance.handle, &vkcontext.surface));
+	LOG_DEBUG("Created Vulkan surface");
 
 	LOG_DEBUG("Vulkan Initialized");
 	return TRUE;

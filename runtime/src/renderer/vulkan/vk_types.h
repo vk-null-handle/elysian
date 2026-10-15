@@ -14,6 +14,7 @@ typedef struct vulkan_instance {
 
 typedef struct vulkan_context {
   VkAllocationCallbacks* allocator;
-  
+  VkSurfaceKHR surface;
+
   VulkanInstance instance;
 } VulkanContext;

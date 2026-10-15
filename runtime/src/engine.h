@@ -1,10 +1,11 @@
 #pragma once
 #include "core/window.h"
-#include "game.h"
 #include "defines.h"
+#include "renderer/renderer.h"
 
 typedef struct engine {
   Window window;
+  RendererBackend renderer_backend;
 } Engine;
 
 void engine_init(Engine* engine);

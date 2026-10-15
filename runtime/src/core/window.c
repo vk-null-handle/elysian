@@ -48,6 +48,6 @@ b8 win_create_vk_surface(Window* window, VkInstance instance, VkSurfaceKHR* out_
 	return glfwCreateWindowSurface(instance, window->handle, NULL, out_surface);
 }
 
-const char** win_get_instance_ext(u32* count) {
+const char** win_get_vk_instance_ext(u32* count) {
 	return glfwGetRequiredInstanceExtensions(count);
 }

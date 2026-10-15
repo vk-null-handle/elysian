@@ -30,6 +30,14 @@ void* mem_realloc(void* chunk, usize size, usize newsize) {
 	return realloc(chunk, newsize);
 }
 
+void* mem_copy(void* dest, const void* source, u64 size) {
+	return memcpy(dest, source, size);
+}
+
+void* mem_move(void* dest, const void* src, u64 count) {
+	return memmove(dest, src, count);
+}
+
 void* mem_set(void* dest, i32 value, usize size) {
 	return memset(dest, value, size);
 }

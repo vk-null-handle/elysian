@@ -8,6 +8,7 @@
 #include "vk_device.h"
 #include "vk_shader.h"
 #include "vk_pipeline.h"
+#include "vk_sync.h"
 #include <vulkan/vulkan_core.h>
 
 // TEMP
@@ -67,10 +68,26 @@ b8 vulkan_backend_init(Window* window) {
 	ASSERT(vkcontext.pipeline.handle)
 	LOG_DEBUG("Created Vulkan graphics pipeline");
 
+	vk_sync_resources_create(&vkcontext);
+	LOG_DEBUG("Created Vulkan sync resources");
+
 	return TRUE;
 }
 
 void vulkan_backend_shutdown(void) {
+	vkDeviceWaitIdle(vkcontext.device.logical_dev);
+
+	if (vkcontext.timeline) {
+		vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.timeline, vkcontext.allocator);
+	}
+
+	for (u8 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		struct frame_resources* frame = &vkcontext.frame_resources[i];
+		if (frame->image_acquired) {
+			vkDestroySemaphore(vkcontext.device.logical_dev, frame->image_acquired, vkcontext.allocator);
+		}
+	}
+
 	if (vkcontext.pipeline.layout) {
 		vkDestroyPipelineLayout(vkcontext.device.logical_dev, vkcontext.pipeline.layout, vkcontext.allocator);
 	}

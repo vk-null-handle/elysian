@@ -3,6 +3,30 @@
 #include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
+#define MAX_FRAMES_IN_FLIGHT 2
+
+typedef enum vulkan_cmd_buffer_state {
+  COMMAND_BUFFER_STATE_READY,
+  COMMAND_BUFFER_STATE_RECORDING,
+  COMMAND_BUFFER_STATE_RECORDING_ENDED,
+  COMMAND_BUFFER_STATE_IN_RENDERING,
+  COMMAND_BUFFER_STATE_RENDERING_ENDED,
+  COMMAND_BUFFER_STATE_SUBMITTED,
+  COMMAND_BUFFER_STATE_NOT_ALLOCATED
+} VulkanCmdBufferState;
+
+typedef struct vulkan_command_buffer {
+    VkCommandBuffer handle;
+    VulkanCmdBufferState state;
+} VulkanCmdBuffer;
+
+// Per frame resources
+typedef struct frame_resources {
+	VkCommandPool command_pool;
+	VulkanCmdBuffer command_buffer;
+	VkSemaphore image_acquired;
+} FrameResources;
+
 // TODO: Store shader and pipeline togther
 typedef struct vulkan_pipeline {
   VkPipeline handle;
@@ -66,7 +90,11 @@ typedef struct vulkan_context {
   VkShaderModule vert_shader;
   VkShaderModule frag_shader;
 
+  VkSemaphore timeline;
+  u64 next_signal_value;
+  u64 frame_index;
   VkSemaphore *render_complete;
+  FrameResources frame_resources[MAX_FRAMES_IN_FLIGHT];
 
   VulkanSwapchain swapchain;
   VulkanDevice device;

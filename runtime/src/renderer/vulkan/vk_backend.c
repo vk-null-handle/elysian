@@ -1,7 +1,9 @@
 #include "vk_backend.h"
 #include "core/logger.h"
 #include "core/assert.h"
+#include "core/memory.h"
 
+#include "renderer/vulkan/vk_swapchain.h"
 #include "vk_types.h"
 #include "vk_device.h"
 #include <vulkan/vulkan_core.h>
@@ -44,10 +46,42 @@ b8 vulkan_backend_init(Window* window) {
 	ASSERT(vk_logical_dev_create(&vkcontext));
 	LOG_DEBUG("Created Vulkan logical device");
 
+	i32 width, height;
+	win_get_framebuffer_size(window, &width, &height);
+	if (width == 0 || height == 0) {
+		width = 800;
+		height = 600;
+	}
+
+	vk_swapchain_create(&vkcontext, &vkcontext.swapchain, width, height);
+	LOG_DEBUG("Created Vulkan swapchain");
+
 	return TRUE;
 }
 
 void vulkan_backend_shutdown(void) {
+	if (vkcontext.render_complete) {
+		for (u32 i = 0; i < vkcontext.swapchain.n_images; i++) {
+			vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.render_complete[i], vkcontext.allocator);
+		}
+		mem_free(vkcontext.render_complete, vkcontext.swapchain.n_images * sizeof(*vkcontext.render_complete));
+	}
+
+	if (vkcontext.swapchain.handle) {
+		vk_swapchain_destroy(&vkcontext, &vkcontext.swapchain);
+	}
+
+	if (vkcontext.surface) {
+		vkDestroySurfaceKHR(vkcontext.instance.handle, vkcontext.surface, vkcontext.allocator);
+	};
+
+	if (vkcontext.device.logical_dev) {
+		vkDestroyDevice(vkcontext.device.logical_dev, vkcontext.allocator);
+	}
+
+	if (vkcontext.instance.handle) {
+		vkDestroyInstance(vkcontext.instance.handle, vkcontext.allocator);
+	}
 }
 
 void vulkan_backend_render_frame(void) {

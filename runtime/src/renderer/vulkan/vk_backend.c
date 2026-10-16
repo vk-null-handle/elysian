@@ -1,5 +1,9 @@
 #include "vk_backend.h"
+#include "core/logger.h"
+#include "core/assert.h"
+
 #include "vk_types.h"
+#include "vk_device.h"
 #include <vulkan/vulkan_core.h>
 
 // TEMP
@@ -37,7 +41,9 @@ b8 vulkan_backend_init(Window* window) {
 	VK_CHECK(win_create_vk_surface(window, vkcontext.instance.handle, &vkcontext.surface));
 	LOG_DEBUG("Created Vulkan surface");
 
-	LOG_DEBUG("Vulkan Initialized");
+	ASSERT(vk_logical_dev_create(&vkcontext));
+	LOG_DEBUG("Created Vulkan logical device");
+
 	return TRUE;
 }
 

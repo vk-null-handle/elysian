@@ -3,9 +3,10 @@
 #include "core/assert.h"
 #include "core/memory.h"
 
-#include "renderer/vulkan/vk_swapchain.h"
+#include "vk_swapchain.h"
 #include "vk_types.h"
 #include "vk_device.h"
+#include "vk_shader.h"
 #include <vulkan/vulkan_core.h>
 
 // TEMP
@@ -56,10 +57,22 @@ b8 vulkan_backend_init(Window* window) {
 	vk_swapchain_create(&vkcontext, &vkcontext.swapchain, width, height);
 	LOG_DEBUG("Created Vulkan swapchain");
 
+	vkcontext.vert_shader = vk_shader_load(&vkcontext, "shader_vert.glsl", shaderc_vertex_shader);
+	vkcontext.frag_shader = vk_shader_load(&vkcontext, "shader_frag.glsl", shaderc_fragment_shader);
+	ASSERT(vkcontext.frag_shader || vkcontext.vert_shader);
+	LOG_DEBUG("Compiled and loaded Vulkan shaders");
+
 	return TRUE;
 }
 
 void vulkan_backend_shutdown(void) {
+	if (vkcontext.vert_shader) {
+		vkDestroyShaderModule(vkcontext.device.logical_dev, vkcontext.vert_shader, vkcontext.allocator);
+	}
+	if (vkcontext.frag_shader) {
+		vkDestroyShaderModule(vkcontext.device.logical_dev, vkcontext.frag_shader, vkcontext.allocator);
+	}
+
 	if (vkcontext.render_complete) {
 		for (u32 i = 0; i < vkcontext.swapchain.n_images; i++) {
 			vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.render_complete[i], vkcontext.allocator);

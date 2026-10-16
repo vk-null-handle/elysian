@@ -56,6 +56,10 @@ typedef struct vulkan_context {
   VkAllocationCallbacks* allocator;
   VkSurfaceKHR surface;
 
+  // Shaders
+  VkShaderModule vert_shader;
+  VkShaderModule frag_shader;
+
   VkSemaphore *render_complete;
 
   VulkanSwapchain swapchain;

@@ -9,6 +9,7 @@
 #include "vk_shader.h"
 #include "vk_pipeline.h"
 #include "vk_sync.h"
+#include "vk_cmd_buffer.h"
 #include <vulkan/vulkan_core.h>
 
 // TEMP
@@ -71,6 +72,9 @@ b8 vulkan_backend_init(Window* window) {
 	vk_sync_resources_create(&vkcontext);
 	LOG_DEBUG("Created Vulkan sync resources");
 
+	vk_command_buffers_create(&vkcontext);
+	LOG_DEBUG("Created Vulkan command buffers and pool");
+
 	return TRUE;
 }
 
@@ -85,6 +89,9 @@ void vulkan_backend_shutdown(void) {
 		struct frame_resources* frame = &vkcontext.frame_resources[i];
 		if (frame->image_acquired) {
 			vkDestroySemaphore(vkcontext.device.logical_dev, frame->image_acquired, vkcontext.allocator);
+		}
+		if (frame->command_pool) {
+			vkDestroyCommandPool(vkcontext.device.logical_dev, frame->command_pool, vkcontext.allocator);
 		}
 	}
 

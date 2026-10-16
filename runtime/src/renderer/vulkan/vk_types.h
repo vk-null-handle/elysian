@@ -3,11 +3,17 @@
 #include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
+// TODO: Store shader and pipeline togther
+typedef struct vulkan_pipeline {
+  VkPipeline handle;
+  VkPipelineLayout layout;
+} VulkanPipeline;
+
 typedef struct vulkan_image {
-    VkImage handle;
-    VkDeviceMemory memory;
-    VkImageView view;
-    u32 width, height;
+  VkImage handle;
+  VkDeviceMemory memory;
+  VkImageView view;
+  u32 width, height;
 } VulkanImage;
 
 typedef struct vulkan_swapchain {
@@ -65,4 +71,5 @@ typedef struct vulkan_context {
   VulkanSwapchain swapchain;
   VulkanDevice device;
   VulkanInstance instance;
+  VulkanPipeline pipeline;
 } VulkanContext;

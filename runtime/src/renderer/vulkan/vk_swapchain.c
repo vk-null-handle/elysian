@@ -1,4 +1,5 @@
 #include "vk_swapchain.h"
+#include "core/logger.h"
 #include "renderer/vulkan/vk_utils.h"
 #include "vk_device.h"
 
@@ -18,6 +19,7 @@ void vk_swapchain_destroy(VulkanContext* vkcontext, VulkanSwapchain* swapchain) 
 }
 
 void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u32 width, u32 height) {
+	LOG_DEBUG("HERE");
 	swapchain->width = width;
 	swapchain->height = height;
 	// Get device support info

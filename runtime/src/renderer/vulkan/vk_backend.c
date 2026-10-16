@@ -7,6 +7,7 @@
 #include "vk_types.h"
 #include "vk_device.h"
 #include "vk_shader.h"
+#include "vk_pipeline.h"
 #include <vulkan/vulkan_core.h>
 
 // TEMP
@@ -62,10 +63,21 @@ b8 vulkan_backend_init(Window* window) {
 	ASSERT(vkcontext.frag_shader || vkcontext.vert_shader);
 	LOG_DEBUG("Compiled and loaded Vulkan shaders");
 
+	vkcontext.pipeline.handle = vk_graphics_pipeline_create(&vkcontext);
+	ASSERT(vkcontext.pipeline.handle)
+	LOG_DEBUG("Created Vulkan graphics pipeline");
+
 	return TRUE;
 }
 
 void vulkan_backend_shutdown(void) {
+	if (vkcontext.pipeline.layout) {
+		vkDestroyPipelineLayout(vkcontext.device.logical_dev, vkcontext.pipeline.layout, vkcontext.allocator);
+	}
+	if (vkcontext.pipeline.handle) {
+		vkDestroyPipeline(vkcontext.device.logical_dev, vkcontext.pipeline.handle, vkcontext.allocator);
+	}
+
 	if (vkcontext.vert_shader) {
 		vkDestroyShaderModule(vkcontext.device.logical_dev, vkcontext.vert_shader, vkcontext.allocator);
 	}
@@ -91,6 +103,8 @@ void vulkan_backend_shutdown(void) {
 	if (vkcontext.device.logical_dev) {
 		vkDestroyDevice(vkcontext.device.logical_dev, vkcontext.allocator);
 	}
+	mem_free(vkcontext.device.swapchain_info.formats, sizeof(VkSurfaceFormatKHR) * vkcontext.device.swapchain_info.n_formats);
+	mem_free(vkcontext.device.swapchain_info.present_modes, sizeof(VkPresentModeKHR) * vkcontext.device.swapchain_info.n_present_modes);
 
 	if (vkcontext.instance.handle) {
 		vkDestroyInstance(vkcontext.instance.handle, vkcontext.allocator);

@@ -10,6 +10,6 @@ void renderer_shutdown(RendererBackend* backend) {
 	backend->shutdown();
 }
 
-void renderer_draw_frame(RendererBackend* backend) {
-	backend->render_frame();
+void renderer_draw_frame(RendererBackend* backend, Window* window) {
+	backend->render_frame(window);
 }

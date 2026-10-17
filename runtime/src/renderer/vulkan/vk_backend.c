@@ -119,5 +119,5 @@ void vulkan_backend_shutdown(void) {
 	}
 }
 
-void vulkan_backend_render_frame(void) {
+void vulkan_backend_render_frame(Window* window) {
 }

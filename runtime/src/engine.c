@@ -11,7 +11,7 @@ void engine_run(Engine* engine) {
 	while (!win_should_close(&engine->window)) {
 		win_poll_events();
 		game_tick();
-		renderer_draw_frame(&engine->renderer_backend);
+		renderer_draw_frame(&engine->renderer_backend, &engine->window);
 	}
 }
 

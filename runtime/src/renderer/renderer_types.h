@@ -10,5 +10,5 @@ typedef enum renderer_backend_api {
 typedef struct renderer_backend {
 	b8 (*init)(Window* window);
 	void (*shutdown)(void);
-	void (*render_frame)(void);
+	void (*render_frame)(Window *window);
 } RendererBackend;

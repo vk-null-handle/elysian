@@ -1,7 +1,8 @@
 #include "vk_swapchain.h"
 #include "core/logger.h"
-#include "renderer/vulkan/vk_utils.h"
+#include "vk_utils.h"
 #include "vk_device.h"
+#include "vk_image.h"
 
 #include "core/memory.h"
 #include <vulkan/vulkan_core.h>
@@ -14,6 +15,8 @@ void vk_swapchain_destroy(VulkanContext* vkcontext, VulkanSwapchain* swapchain) 
 	// Free semaphores, images, and image views
 	mem_free(swapchain->images, swapchain->n_images * sizeof(VkImage));
 	mem_free(swapchain->image_views, swapchain->n_images * sizeof(VkImageView));
+	// Destroy depth image
+	vk_image_destroy(vkcontext, &swapchain->depth_image);
 
 	vkDestroySwapchainKHR(vkcontext->device.logical_dev, swapchain->handle, vkcontext->allocator);
 }
@@ -131,5 +134,15 @@ void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u
 		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &sem_info, vkcontext->allocator, &vkcontext->render_complete[i]));
 	}
 
-	// TODO: Create depth image
+	// Create depth image
+	vk_image_create(
+		vkcontext,
+		swapchain->width,
+		swapchain->height,
+		vkcontext->device.depth_format,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		TRUE,
+		VK_IMAGE_ASPECT_DEPTH_BIT,
+		&swapchain->depth_image);
 }

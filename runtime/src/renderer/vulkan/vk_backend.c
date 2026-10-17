@@ -79,7 +79,7 @@ b8 vulkan_backend_init(Window* window) {
 }
 
 void vulkan_backend_shutdown(void) {
-	vkDeviceWaitIdle(vkcontext.device.logical_dev);
+	VK_CHECK(vkDeviceWaitIdle(vkcontext.device.logical_dev));
 
 	if (vkcontext.timeline) {
 		vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.timeline, vkcontext.allocator);

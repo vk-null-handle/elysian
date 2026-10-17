@@ -1,8 +1,6 @@
 #pragma once
 #include "vk_types.h"
 
-static i32 find_memory_index(VulkanContext* vkcontext, u32 type_filter, u32 property_flags);
-
 void vk_image_create(
 	VulkanContext* vkcontext,
 	u32 width,

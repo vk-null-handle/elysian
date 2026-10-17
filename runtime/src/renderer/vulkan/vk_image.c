@@ -3,21 +3,6 @@
 #include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
-static i32 find_memory_index(VulkanContext* vkcontext, u32 type_filter, u32 property_flags) {
-	VkPhysicalDeviceMemoryProperties memory_properties;
-	vkGetPhysicalDeviceMemoryProperties(vkcontext->device.physical_dev, &memory_properties);
-
-	for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
-		// Check each memory type to see if permitted and has the required properties
-		if (type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & property_flags) == property_flags) {
-			return i;
-		}
-	}
-
-	LOG_WARN("Unable to find suitable image memory type");
-	return -1;
-}
-
 void vk_image_create(
 	VulkanContext* vkcontext,
 	u32 width,

@@ -177,60 +177,8 @@ void vulkan_backend_render_frame(Window* window) {
 	vkBeginCommandBuffer(frame_res->command_buffer, &cmd_begin_info);
 
 	// Transition the color and depth images
-	// https://docs.vulkan.org/refpages/latest/refpages/source/VkImageMemoryBarrier2.html
-	VkImageMemoryBarrier2 layout_barriers[] = {
-		// Color image barrier
-		{
-			// The swapchain image is prepared to receive rendered color output
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-			.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			.srcAccessMask = 0,
-			.dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-			.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-			// Dont care what old image format was
-			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			// Use image as color attachment
-			.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-			.image = vkcontext.swapchain.images[image_index],
-			.subresourceRange = {
-				.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-				.baseMipLevel = 0,
-				.levelCount = 1,
-				.baseArrayLayer = 0,
-				.layerCount = 1,
-			},
-		},
-		// Depth image barrier
-		// The swapchain depth image is prepared to receive depth output
-		{
-			.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-			.srcStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-			.srcAccessMask = 0,
-			.dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT, // Both specified to control memory access at both stages (write)
-			.dstAccessMask = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-			// Dont care what old image format was
-			.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-			// Use image as color attachment
-			.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-			.image = vkcontext.swapchain.depth_image.handle,
-			.subresourceRange = {
-				.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT,
-				.baseMipLevel = 0,
-				.levelCount = 1,
-				.baseArrayLayer = 0,
-				.layerCount = 1,
-			},
-		},
-	};
-	u32 n_layout_barriers = sizeof(layout_barriers) / sizeof(layout_barriers[0]);
-
-	// Record the two barriers into command buffer
-	VkDependencyInfo dep_info = {
-		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-		.imageMemoryBarrierCount = n_layout_barriers,
-		.pImageMemoryBarriers = layout_barriers,
-	};
-	vkCmdPipelineBarrier2(frame_res->command_buffer, &dep_info);
+	transition_image(frame_res->command_buffer, vkcontext.swapchain.images[image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	transition_image(frame_res->command_buffer, vkcontext.swapchain.depth_image.handle, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL);
 
 	// Setup the attachments (color and depth) and begin rendering (dynamic)
 	VkRenderingAttachmentInfo color_attach_info = {
@@ -300,32 +248,7 @@ void vulkan_backend_render_frame(Window* window) {
 	vkCmdEndRendering(frame_res->command_buffer);
 
 	// Transition the swapchain image from color attachment to presentation so we can show it
-	VkImageMemoryBarrier2 present_layout_barrier = {
-		.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-		.srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-		.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-		.dstStageMask = VK_PIPELINE_STAGE_2_NONE, // Nothing is waiting, but the cache is flushed and layout is transition
-		.dstAccessMask = 0,
-		// From color attachment to present layout
-		.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-		.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-		.image = vkcontext.swapchain.images[image_index],
-		.subresourceRange = {
-			.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-			.baseMipLevel = 0,
-			.levelCount = 1,
-			.baseArrayLayer = 0,
-			.layerCount = 1,
-		},
-	};
-
-	// Record the barrier into command buffer
-	VkDependencyInfo present_dep_info = {
-		.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-		.imageMemoryBarrierCount = 1,
-		.pImageMemoryBarriers = &present_layout_barrier,
-	};
-	vkCmdPipelineBarrier2(frame_res->command_buffer, &present_dep_info);
+	transition_image(frame_res->command_buffer, vkcontext.swapchain.images[image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	// End command buffer
 	vkEndCommandBuffer(frame_res->command_buffer);

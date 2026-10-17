@@ -8,6 +8,8 @@
 
 VkShaderModule vk_shader_load(VulkanDevice* device, const char* file_name, shaderc_shader_kind kind);
 
+void transition_image(VkCommandBuffer cmd_buffer, VkImage image, VkImageLayout old_layout, VkImageLayout new_layout);
+
 i32 find_memory_index(VulkanDevice* device, u32 type_filter, u32 property_flags);
 
 #define VK_CHECK(expr) { \

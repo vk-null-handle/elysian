@@ -16,7 +16,7 @@ void vk_swapchain_destroy(VulkanContext* vkcontext, VulkanSwapchain* swapchain) 
 	mem_free(swapchain->images, swapchain->n_images * sizeof(VkImage));
 	mem_free(swapchain->image_views, swapchain->n_images * sizeof(VkImageView));
 	// Destroy depth image
-	vk_image_destroy(vkcontext, &swapchain->depth_image);
+	vk_image_destroy(&vkcontext->device, vkcontext->allocator, &swapchain->depth_image);
 
 	vkDestroySwapchainKHR(vkcontext->device.logical_dev, swapchain->handle, vkcontext->allocator);
 }
@@ -26,7 +26,7 @@ void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u
 	swapchain->width = width;
 	swapchain->height = height;
 	// Get device support info
-	vk_device_query_swapchain_support_info(vkcontext, &vkcontext->device.swapchain_info);
+	vk_device_query_swapchain_support_info(vkcontext->surface, &vkcontext->device, &vkcontext->device.swapchain_info);
 
 	// Choose a swap surface format.
 	b8 supported = FALSE;
@@ -136,7 +136,8 @@ void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u
 
 	// Create depth image
 	vk_image_create(
-		vkcontext,
+		&vkcontext->device,
+		vkcontext->allocator,
 		swapchain->width,
 		swapchain->height,
 		vkcontext->device.depth_format,

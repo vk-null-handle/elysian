@@ -4,9 +4,9 @@
 #include "core/logger.h"
 #include "core/memory.h"
 
-i32 find_memory_index(VulkanContext* vkcontext, u32 type_filter, u32 property_flags) {
+i32 find_memory_index(VulkanDevice* device, u32 type_filter, u32 property_flags) {
 	VkPhysicalDeviceMemoryProperties memory_properties;
-	vkGetPhysicalDeviceMemoryProperties(vkcontext->device.physical_dev, &memory_properties);
+	vkGetPhysicalDeviceMemoryProperties(device->physical_dev, &memory_properties);
 
 	for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
 		// Check each memory type to see if permitted and has the required properties
@@ -19,7 +19,7 @@ i32 find_memory_index(VulkanContext* vkcontext, u32 type_filter, u32 property_fl
 	return -1;
 }
 
-VkShaderModule vk_shader_load(VulkanContext* vkcontext, const char* file_name, shaderc_shader_kind kind) {
+VkShaderModule vk_shader_load(VulkanDevice* device, VkAllocationCallbacks* allocator, const char* file_name, shaderc_shader_kind kind) {
 	// read shader file from disk
 	char shader_path[512];
 	snprintf(shader_path, sizeof(shader_path), "../../runtime/assets/shaders/%s", file_name);
@@ -78,7 +78,7 @@ VkShaderModule vk_shader_load(VulkanContext* vkcontext, const char* file_name, s
 
 	VkShaderModule shader_module = VK_NULL_HANDLE;
 
-	if (vkCreateShaderModule(vkcontext->device.logical_dev, &module_create_info, vkcontext->allocator, &shader_module) != VK_SUCCESS) {
+	if (vkCreateShaderModule(device->logical_dev, &module_create_info, allocator, &shader_module) != VK_SUCCESS) {
 		LOG_ERROR("Failed to create Vulkan shader module");
 
 		shaderc_result_release(result);

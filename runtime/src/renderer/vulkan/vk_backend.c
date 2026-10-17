@@ -60,8 +60,8 @@ b8 vulkan_backend_init(Window* window) {
 	vk_swapchain_create(&vkcontext, &vkcontext.swapchain, width, height);
 	LOG_DEBUG("Created Vulkan swapchain");
 
-	vkcontext.pipeline.vert_shader = vk_shader_load(&vkcontext, "shader_vert.glsl", shaderc_vertex_shader);
-	vkcontext.pipeline.frag_shader = vk_shader_load(&vkcontext, "shader_frag.glsl", shaderc_fragment_shader);
+	vkcontext.pipeline.vert_shader = vk_shader_load(&vkcontext.device, vkcontext.allocator, "shader_vert.glsl", shaderc_vertex_shader);
+	vkcontext.pipeline.frag_shader = vk_shader_load(&vkcontext.device, vkcontext.allocator, "shader_frag.glsl", shaderc_fragment_shader);
 	ASSERT(vk_graphics_pipeline_create(&vkcontext.device, &vkcontext.pipeline, vkcontext.allocator));
 	LOG_DEBUG("Created Vulkan graphics pipeline");
 

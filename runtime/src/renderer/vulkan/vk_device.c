@@ -55,25 +55,25 @@ static b8 find_graphics_queue(VulkanContext* vkcontext) {
 	return FALSE;
 }
 
-void vk_device_query_swapchain_support_info(VulkanContext* vkcontext, VulkanSwapchainSupportInfo* out_info) {
+void vk_device_query_swapchain_support_info(VkSurfaceKHR surface, VulkanDevice* device, VulkanSwapchainSupportInfo* out_info) {
 	// Surface capabilities
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkcontext->device.physical_dev, vkcontext->surface, &out_info->capabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->physical_dev, surface, &out_info->capabilities);
 	// Surface formats
-	vkGetPhysicalDeviceSurfaceFormatsKHR(vkcontext->device.physical_dev, vkcontext->surface, &out_info->n_formats, NULL);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(device->physical_dev, surface, &out_info->n_formats, NULL);
 	if (out_info->n_formats > 0) {
 		if (!out_info->formats) {
 			out_info->formats = mem_alloc(sizeof(VkSurfaceFormatKHR) * out_info->n_formats);
 		}
-		vkGetPhysicalDeviceSurfaceFormatsKHR(vkcontext->device.physical_dev, vkcontext->surface, &out_info->n_formats, out_info->formats);
+		vkGetPhysicalDeviceSurfaceFormatsKHR(device->physical_dev, surface, &out_info->n_formats, out_info->formats);
 	}
 
 	// Present modes
-	vkGetPhysicalDeviceSurfacePresentModesKHR(vkcontext->device.physical_dev, vkcontext->surface, &out_info->n_present_modes, NULL);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(device->physical_dev, surface, &out_info->n_present_modes, NULL);
 	if (out_info->n_present_modes > 0) {
 		if (!out_info->present_modes) {
 			out_info->present_modes = mem_alloc(sizeof(VkPresentModeKHR) * out_info->n_present_modes);
 		}
-		vkGetPhysicalDeviceSurfacePresentModesKHR(vkcontext->device.physical_dev, vkcontext->surface, &out_info->n_present_modes, out_info->present_modes);
+		vkGetPhysicalDeviceSurfacePresentModesKHR(device->physical_dev, surface, &out_info->n_present_modes, out_info->present_modes);
 	}
 }
 

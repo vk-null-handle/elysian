@@ -1,7 +1,7 @@
 CC = clang
 CFLAGS = -std=c99 -m64 -g -DDEBUG -DENABLE_TRACE
 
-INCLUDES = -Iruntime/src -Itestbed/src
+INCLUDES = -Iruntime/src -Itestbed/src -Ivendor/
 LIBS = -lvulkan -lglfw -lshaderc_shared
 
 BIN = build/bin

@@ -16,7 +16,6 @@
 static VulkanContext vkcontext;
 
 b8 vulkan_backend_init(Window* window) {
-
 	static const char* layers[] = {"VK_LAYER_KHRONOS_validation"};
 	u32 n_instance_exts;
 	const char** exts = win_get_vk_instance_ext(&n_instance_exts);
@@ -45,17 +44,17 @@ b8 vulkan_backend_init(Window* window) {
 	VK_CHECK(win_create_vk_surface(window, vkcontext.instance.handle, &vkcontext.surface));
 	LOG_DEBUG("Created Vulkan surface");
 
-	ASSERT(vk_logical_dev_create(&vkcontext));
+	ASSERT(vk_logical_dev_create(&vkcontext.device, vkcontext.surface, &vkcontext.instance));
 	LOG_DEBUG("Created Vulkan logical device");
 
-	i32 width, height;
-	win_get_framebuffer_size(window, &width, &height);
-	if (width == 0 || height == 0) {
-		width = 800;
-		height = 600;
+	VkExtent2D extent;
+	win_get_framebuffer_size(window, &extent.width, &extent.height);
+	if (extent.width == 0 || extent.height == 0) {
+		extent.width = 1920;
+		extent.height = 800;
 	}
 
-	vk_swapchain_create(&vkcontext, &vkcontext.swapchain, width, height);
+	vk_swapchain_create(&vkcontext.device, &vkcontext.swapchain, vkcontext.surface, &extent);
 	LOG_DEBUG("Created Vulkan swapchain");
 
 	vkcontext.pipeline.vert_shader = vk_shader_load(&vkcontext.device, "shader_vert.glsl", shaderc_vertex_shader);
@@ -99,7 +98,7 @@ void vulkan_backend_shutdown(void) {
 	}
 
 	if (vkcontext.swapchain.handle) {
-		vk_swapchain_destroy(&vkcontext, &vkcontext.swapchain);
+		vk_swapchain_destroy(&vkcontext.device, &vkcontext.swapchain);
 	}
 
 	if (vkcontext.surface) {

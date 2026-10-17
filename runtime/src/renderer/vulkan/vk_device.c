@@ -6,11 +6,11 @@
 #include "renderer/vulkan/vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
-static b8 find_phys_dev(VulkanContext* vkcontext) {
+static b8 find_phys_dev(VulkanInstance* instance, VulkanDevice* out_device) {
 	u32 n_phys_dev;
-	vkEnumeratePhysicalDevices(vkcontext->instance.handle, &n_phys_dev, NULL);
+	vkEnumeratePhysicalDevices(instance->handle, &n_phys_dev, NULL);
 	VkPhysicalDevice phys_devs[n_phys_dev];
-	vkEnumeratePhysicalDevices(vkcontext->instance.handle, &n_phys_dev, phys_devs);
+	vkEnumeratePhysicalDevices(instance->handle, &n_phys_dev, phys_devs);
 
 	VkPhysicalDevice phys_dev = phys_devs[0]; // Default to first GPU
 	for (u32 i = 0; i < n_phys_dev; i++) {
@@ -20,8 +20,8 @@ static b8 find_phys_dev(VulkanContext* vkcontext) {
 		// Get first discrete device
 		if (props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
 			phys_dev = phys_devs[i];
-			vkcontext->device.properties = props;
-			vkcontext->device.physical_dev = phys_dev;
+			out_device->properties = props;
+			out_device->physical_dev = phys_dev;
 			return TRUE;
 		};
 	};
@@ -29,26 +29,26 @@ static b8 find_phys_dev(VulkanContext* vkcontext) {
 	return FALSE;
 }
 
-static b8 find_graphics_queue(VulkanContext* vkcontext) {
+static b8 find_graphics_queue(VulkanDevice* device, VkSurfaceKHR surface) {
 	u32 n_queue_fams;
-	vkGetPhysicalDeviceQueueFamilyProperties2(vkcontext->device.physical_dev, &n_queue_fams, NULL);
+	vkGetPhysicalDeviceQueueFamilyProperties2(device->physical_dev, &n_queue_fams, NULL);
 	VkQueueFamilyProperties2 queue_fam_props[n_queue_fams];
 
 	for (u32 i = 0; i < n_queue_fams; ++i) {
 		queue_fam_props[i].sType = VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2;
 		queue_fam_props[i].pNext = NULL;
 	}
-	vkGetPhysicalDeviceQueueFamilyProperties2(vkcontext->device.physical_dev, &n_queue_fams, queue_fam_props);
+	vkGetPhysicalDeviceQueueFamilyProperties2(device->physical_dev, &n_queue_fams, queue_fam_props);
 
 	for (int current_fam_idx = 0; current_fam_idx < n_queue_fams; current_fam_idx++) {
 		// Ensure it has presentation support
 		VkBool32 hasPresentSupport = VK_FALSE;
-		vkGetPhysicalDeviceSurfaceSupportKHR(vkcontext->device.physical_dev, current_fam_idx, vkcontext->surface, &hasPresentSupport);
+		vkGetPhysicalDeviceSurfaceSupportKHR(device->physical_dev, current_fam_idx, surface, &hasPresentSupport);
 
 		const VkQueueFamilyProperties2* props = &queue_fam_props[current_fam_idx];
 		// Ensure this is a graphics queue with presentation support
 		if (props->queueFamilyProperties.queueFlags & VK_QUEUE_GRAPHICS_BIT && hasPresentSupport) {
-			vkcontext->device.gfx_queue_fam_idx = current_fam_idx;
+			device->gfx_queue_fam_idx = current_fam_idx;
 			return TRUE;
 		}
 	}
@@ -77,14 +77,14 @@ void vk_device_query_swapchain_support_info(VkSurfaceKHR surface, VulkanDevice* 
 	}
 }
 
-b8 vk_logical_dev_create(VulkanContext* vkcontext) {
-	if (!find_phys_dev(vkcontext)) {
+b8 vk_logical_dev_create(VulkanDevice* device, VkSurfaceKHR surface, VulkanInstance* instance) {
+	if (!find_phys_dev(instance, device)) {
 		LOG_ERROR("Failed to find appropriate physical device");
 		return FALSE;
 	}
-	LOG_DEBUG("Picked physical device: %s", vkcontext->device.properties.deviceName);
+	LOG_DEBUG("Picked physical device: %s", device->properties.deviceName);
 
-	ASSERT(find_graphics_queue(vkcontext));
+	ASSERT(find_graphics_queue(device, surface));
 
 	// Query supported features
 	VkPhysicalDeviceVulkan14Features supportedFeatures14 = {
@@ -103,7 +103,7 @@ b8 vk_logical_dev_create(VulkanContext* vkcontext) {
 		.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
 		.pNext = &supportedFeatures12,
 	};
-	vkGetPhysicalDeviceFeatures2(vkcontext->device.physical_dev, &supportedFeatures);
+	vkGetPhysicalDeviceFeatures2(device->physical_dev, &supportedFeatures);
 
 	// Check if what is need is supported
 	if (!supportedFeatures13.dynamicRendering || !supportedFeatures13.synchronization2 || !supportedFeatures12.timelineSemaphore) {
@@ -135,7 +135,7 @@ b8 vk_logical_dev_create(VulkanContext* vkcontext) {
 	f32 queue_priorities = 1.0f;
 	VkDeviceQueueCreateInfo gfx_queue_info = {
 		.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-		.queueFamilyIndex = vkcontext->device.gfx_queue_fam_idx,
+		.queueFamilyIndex = device->gfx_queue_fam_idx,
 		// Just one queue
 		.queueCount = 1,
 		.pQueuePriorities = &queue_priorities,
@@ -155,17 +155,14 @@ b8 vk_logical_dev_create(VulkanContext* vkcontext) {
 		.pEnabledFeatures = NULL, // Features struct chain is in .pNext
 	};
 
-	VK_CHECK(vkCreateDevice(vkcontext->device.physical_dev, &device_info, NULL, &vkcontext->device.logical_dev));
+	VK_CHECK(vkCreateDevice(device->physical_dev, &device_info, NULL, &device->logical_dev));
 
 	// Get the graphics queue
-	vkGetDeviceQueue(vkcontext->device.logical_dev, vkcontext->device.gfx_queue_fam_idx, 0, &vkcontext->device.gfx_queue);
-	if (!vkcontext->device.gfx_queue) {
-		LOG_ERROR("Failed to get the graphics queue");
-		return FALSE;
-	}
+	vkGetDeviceQueue(device->logical_dev, device->gfx_queue_fam_idx, 0, &device->gfx_queue);
+	ASSERT(device->gfx_queue);
 
 	// TODO: Device depth format checking
-	vkcontext->device.depth_format = VK_FORMAT_D32_SFLOAT;
+	device->depth_format = VK_FORMAT_D32_SFLOAT;
 
 	return TRUE;
 }

@@ -4,7 +4,7 @@
 #include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
-b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipeline, VkAllocationCallbacks* allocator) {
+b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipeline) {
 	// Define pipeline layout
 	VkPipelineLayoutCreateInfo pipeline_layout_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -12,7 +12,7 @@ b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipelin
 		.setLayoutCount = 0,
 		.pushConstantRangeCount = 0,
 	};
-	VK_CHECK(vkCreatePipelineLayout(device->logical_dev, &pipeline_layout_info, allocator, &out_pipeline->layout));
+	VK_CHECK(vkCreatePipelineLayout(device->logical_dev, &pipeline_layout_info, NULL, &out_pipeline->layout));
 
 	// Define main shader function
 	const char* entry_point = "main";
@@ -145,26 +145,26 @@ b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipelin
 		.renderPass = VK_NULL_HANDLE,
 	};
 
-	VK_CHECK(vkCreateGraphicsPipelines(device->logical_dev, NULL, 1, &pipeline_info, allocator, &out_pipeline->handle));
+	VK_CHECK(vkCreateGraphicsPipelines(device->logical_dev, NULL, 1, &pipeline_info, NULL, &out_pipeline->handle));
 
 	return TRUE;
 }
 
-void vk_pipeline_destroy(VulkanDevice* device, VulkanPipeline* pipeline, VkAllocationCallbacks* allocator) {
+void vk_pipeline_destroy(VulkanDevice* device, VulkanPipeline* pipeline) {
 	if (pipeline->vert_shader) {
-		vkDestroyShaderModule(device->logical_dev, pipeline->vert_shader, allocator);
+		vkDestroyShaderModule(device->logical_dev, pipeline->vert_shader, NULL);
 	}
 	if (pipeline->frag_shader) {
-		vkDestroyShaderModule(device->logical_dev, pipeline->frag_shader, allocator);
+		vkDestroyShaderModule(device->logical_dev, pipeline->frag_shader, NULL);
 	}
 	if (pipeline->comp_shader) {
-		vkDestroyShaderModule(device->logical_dev, pipeline->comp_shader, allocator);
+		vkDestroyShaderModule(device->logical_dev, pipeline->comp_shader, NULL);
 	}
 
 	if (pipeline->layout) {
-		vkDestroyPipelineLayout(device->logical_dev, pipeline->layout, allocator);
+		vkDestroyPipelineLayout(device->logical_dev, pipeline->layout, NULL);
 	}
 	if (pipeline->handle) {
-		vkDestroyPipeline(device->logical_dev, pipeline->handle, allocator);
+		vkDestroyPipeline(device->logical_dev, pipeline->handle, NULL);
 	}
 }

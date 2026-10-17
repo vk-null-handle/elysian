@@ -29,7 +29,7 @@ typedef struct frame_resources {
 typedef struct vulkan_pipeline {
   VkPipeline handle;
   VkPipelineLayout layout;
-  // Shaders
+
   VkShaderModule vert_shader;
   VkShaderModule comp_shader;
   VkShaderModule frag_shader;
@@ -85,7 +85,6 @@ typedef struct vulkan_instance {
 } VulkanInstance;
 
 typedef struct vulkan_context {
-  VkAllocationCallbacks* allocator;
   VkSurfaceKHR surface;
 
   VkSemaphore timeline;

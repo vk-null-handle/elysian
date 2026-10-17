@@ -155,7 +155,7 @@ b8 vk_logical_dev_create(VulkanContext* vkcontext) {
 		.pEnabledFeatures = NULL, // Features struct chain is in .pNext
 	};
 
-	VK_CHECK(vkCreateDevice(vkcontext->device.physical_dev, &device_info, vkcontext->allocator, &vkcontext->device.logical_dev));
+	VK_CHECK(vkCreateDevice(vkcontext->device.physical_dev, &device_info, NULL, &vkcontext->device.logical_dev));
 
 	// Get the graphics queue
 	vkGetDeviceQueue(vkcontext->device.logical_dev, vkcontext->device.gfx_queue_fam_idx, 0, &vkcontext->device.gfx_queue);

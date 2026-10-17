@@ -3,7 +3,6 @@
 
 void vk_image_create(
 	VulkanDevice* device,
-	VkAllocationCallbacks* allocator,
 	u32 width,
 	u32 height,
 	VkFormat format,
@@ -15,9 +14,8 @@ void vk_image_create(
 
 void vk_image_view_create(
 	VulkanDevice* device,
-	VkAllocationCallbacks* allocator,
 	VkFormat format,
 	VulkanImage* image,
 	VkImageAspectFlags aspect_flags);
 
-void vk_image_destroy(VulkanDevice* device, VkAllocationCallbacks* allocator, VulkanImage* image);
+void vk_image_destroy(VulkanDevice* device, VulkanImage* image);

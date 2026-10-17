@@ -13,7 +13,7 @@ void vk_command_buffers_create(VulkanContext* vkcontext) {
 			.queueFamilyIndex = vkcontext->device.gfx_queue_fam_idx,
 		};
 
-		VK_CHECK(vkCreateCommandPool(vkcontext->device.logical_dev, &pool_info, vkcontext->allocator, &frame->command_pool));
+		VK_CHECK(vkCreateCommandPool(vkcontext->device.logical_dev, &pool_info, NULL, &frame->command_pool));
 
 		// https://docs.vulkan.org/refpages/latest/refpages/source/VkCommandBufferAllocateInfo.html
 		VkCommandBufferAllocateInfo cmd_alloc_info = {

@@ -10,15 +10,15 @@
 void vk_swapchain_destroy(VulkanContext* vkcontext, VulkanSwapchain* swapchain) {
 	// Destory each swapchain images semaphore and image view
 	for (u32 i = 0; i < swapchain->n_images; i++) {
-		vkDestroyImageView(vkcontext->device.logical_dev, swapchain->image_views[i], vkcontext->allocator);
+		vkDestroyImageView(vkcontext->device.logical_dev, swapchain->image_views[i], NULL);
 	}
 	// Free semaphores, images, and image views
 	mem_free(swapchain->images, swapchain->n_images * sizeof(VkImage));
 	mem_free(swapchain->image_views, swapchain->n_images * sizeof(VkImageView));
 	// Destroy depth image
-	vk_image_destroy(&vkcontext->device, vkcontext->allocator, &swapchain->depth_image);
+	vk_image_destroy(&vkcontext->device, &swapchain->depth_image);
 
-	vkDestroySwapchainKHR(vkcontext->device.logical_dev, swapchain->handle, vkcontext->allocator);
+	vkDestroySwapchainKHR(vkcontext->device.logical_dev, swapchain->handle, NULL);
 }
 
 void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u32 width, u32 height) {
@@ -96,7 +96,7 @@ void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u
 		.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
 	};
 
-	VK_CHECK(vkCreateSwapchainKHR(vkcontext->device.logical_dev, &swapchain_create_info, vkcontext->allocator, &swapchain->handle));
+	VK_CHECK(vkCreateSwapchainKHR(vkcontext->device.logical_dev, &swapchain_create_info, NULL, &swapchain->handle));
 
 	// Get images
 	vkGetSwapchainImagesKHR(vkcontext->device.logical_dev, swapchain->handle, &swapchain->n_images, NULL);
@@ -121,7 +121,7 @@ void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u
 			},
 		};
 
-		VK_CHECK(vkCreateImageView(vkcontext->device.logical_dev, &image_view_info, vkcontext->allocator, &swapchain->image_views[i]));
+		VK_CHECK(vkCreateImageView(vkcontext->device.logical_dev, &image_view_info, NULL, &swapchain->image_views[i]));
 	}
 
 	// Create semaphore to signal render completion for each swapchain image
@@ -131,13 +131,12 @@ void vk_swapchain_create(VulkanContext* vkcontext, VulkanSwapchain* swapchain, u
 		const VkSemaphoreCreateInfo sem_info = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		};
-		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &sem_info, vkcontext->allocator, &vkcontext->render_complete[i]));
+		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &sem_info, NULL, &vkcontext->render_complete[i]));
 	}
 
 	// Create depth image
 	vk_image_create(
 		&vkcontext->device,
-		vkcontext->allocator,
 		swapchain->width,
 		swapchain->height,
 		vkcontext->device.depth_format,

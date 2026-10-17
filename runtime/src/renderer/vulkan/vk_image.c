@@ -6,7 +6,6 @@
 
 void vk_image_create(
 	VulkanDevice* device,
-	VkAllocationCallbacks* allocator,
 	u32 width,
 	u32 height,
 	VkFormat format,
@@ -36,7 +35,7 @@ void vk_image_create(
 		.samples = VK_SAMPLE_COUNT_1_BIT,
 	};
 
-	VK_CHECK(vkCreateImage(device->logical_dev, &image_create_info, allocator, &out_image->handle));
+	VK_CHECK(vkCreateImage(device->logical_dev, &image_create_info, NULL, &out_image->handle));
 
 	// Query memory requirements for the image
 	VkMemoryRequirements memory_requirements;
@@ -55,7 +54,7 @@ void vk_image_create(
 		.memoryTypeIndex = memory_type,
 	};
 	// Allocate memory for image
-	VK_CHECK(vkAllocateMemory(device->logical_dev, &memory_allocate_info, allocator, &out_image->memory));
+	VK_CHECK(vkAllocateMemory(device->logical_dev, &memory_allocate_info, NULL, &out_image->memory));
 
 	// Bind the memory
 	VK_CHECK(vkBindImageMemory(device->logical_dev, out_image->handle, out_image->memory, 0));
@@ -63,13 +62,12 @@ void vk_image_create(
 	// Create view
 	if (create_view) {
 		out_image->view = 0;
-		vk_image_view_create(device, allocator, format, out_image, view_aspect_flags);
+		vk_image_view_create(device, format, out_image, view_aspect_flags);
 	}
 }
 
 void vk_image_view_create(
 	VulkanDevice* device,
-	VkAllocationCallbacks* allocator,
 	VkFormat format,
 	VulkanImage* image,
 	VkImageAspectFlags aspect_flags) {
@@ -89,20 +87,20 @@ void vk_image_view_create(
 		},
 	};
 
-	VK_CHECK(vkCreateImageView(device->logical_dev, &view_create_info, allocator, &image->view));
+	VK_CHECK(vkCreateImageView(device->logical_dev, &view_create_info, NULL, &image->view));
 }
 
-void vk_image_destroy(VulkanDevice* device, VkAllocationCallbacks* allocator, VulkanImage* image) {
+void vk_image_destroy(VulkanDevice* device, VulkanImage* image) {
 	if (image->view) {
-		vkDestroyImageView(device->logical_dev, image->view, allocator);
+		vkDestroyImageView(device->logical_dev, image->view, NULL);
 		image->view = 0;
 	}
 	if (image->memory) {
-		vkFreeMemory(device->logical_dev, image->memory, allocator);
+		vkFreeMemory(device->logical_dev, image->memory, NULL);
 		image->memory = 0;
 	}
 	if (image->handle) {
-		vkDestroyImage(device->logical_dev, image->handle, allocator);
+		vkDestroyImage(device->logical_dev, image->handle, NULL);
 		image->handle = 0;
 	}
 }

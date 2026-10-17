@@ -18,7 +18,7 @@ void vk_sync_resources_create(VulkanContext* vkcontext) {
 		.pNext = &semaphore_type_info,
 	};
 
-	VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, vkcontext->allocator, &vkcontext->timeline));
+	VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, NULL, &vkcontext->timeline));
 
 	// Per-frame image-acquire semaphores
 	for (u8 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -27,6 +27,6 @@ void vk_sync_resources_create(VulkanContext* vkcontext) {
 		VkSemaphoreCreateInfo semaphore_info = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		};
-		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, vkcontext->allocator, &resources->image_acquired));
+		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, NULL, &resources->image_acquired));
 	}
 }

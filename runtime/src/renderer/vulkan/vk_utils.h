@@ -6,7 +6,7 @@
 #include <shaderc/shaderc.h>
 #include <vulkan/vk_enum_string_helper.h>
 
-VkShaderModule vk_shader_load(VulkanDevice* device, VkAllocationCallbacks* allocator, const char* file_name, shaderc_shader_kind kind);
+VkShaderModule vk_shader_load(VulkanDevice* device, const char* file_name, shaderc_shader_kind kind);
 
 i32 find_memory_index(VulkanDevice* device, u32 type_filter, u32 property_flags);
 

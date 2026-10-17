@@ -10,6 +10,15 @@ typedef struct frame_resources {
 	VkSemaphore image_acquired;
 } FrameResources;
 
+typedef struct vulkan_sync {
+  // Global GPU timeline
+  VkSemaphore timeline;
+  u64 next_signal_value;
+  
+  u64 frame_index;
+  VkSemaphore *render_complete;
+} VulkanSync;
+
 typedef struct vulkan_pipeline {
   VkPipeline handle;
   VkPipelineLayout layout;
@@ -62,6 +71,13 @@ typedef struct vulkan_device {
 	VkCommandPool command_pool;
 } VulkanDevice;
 
+typedef struct vulkan_buffer {
+  VkBuffer handle;
+  VkDeviceMemory memory;
+  VkDeviceSize size;
+  void* mapped; 
+} VulkanBuffer;
+
 typedef struct vulkan_instance {
   VkInstance handle;
   const char** layers;
@@ -71,15 +87,13 @@ typedef struct vulkan_instance {
 
 typedef struct vulkan_context {
   VkSurfaceKHR surface;
-
-  VkSemaphore timeline;
-  u64 next_signal_value;
-  u64 frame_index;
-  VkSemaphore *render_complete;
   FrameResources frame_resources[MAX_FRAMES_IN_FLIGHT];
 
+  VulkanSync sync;
   VulkanSwapchain swapchain;
   VulkanDevice device;
   VulkanInstance instance;
   VulkanPipeline pipeline;
+
+  VulkanBuffer indirect_buffer;
 } VulkanContext;

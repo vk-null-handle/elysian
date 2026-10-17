@@ -19,7 +19,7 @@ void vk_sync_resources_create(VulkanContext* vkcontext) {
 		.pNext = &semaphore_type_info,
 	};
 
-	VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, NULL, &vkcontext->timeline));
+	VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, NULL, &vkcontext->sync.timeline));
 
 	// Per-frame image-acquire semaphores
 	for (u8 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -31,12 +31,14 @@ void vk_sync_resources_create(VulkanContext* vkcontext) {
 		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &semaphore_info, NULL, &resources->image_acquired));
 	}
 	// Create semaphore to signal render completion for each swapchain image
-	vkcontext->render_complete = mem_calloc(vkcontext->swapchain.n_images, sizeof(*vkcontext->render_complete));
+	vkcontext->sync.render_complete = mem_calloc(vkcontext->swapchain.n_images, sizeof(VkSemaphore));
 	for (u32 i = 0; i < vkcontext->swapchain.n_images; i++) {
 		// https://docs.vulkan.org/refpages/latest/refpages/source/VkSemaphoreCreateInfo.html
 		const VkSemaphoreCreateInfo sem_info = {
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 		};
-		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &sem_info, NULL, &vkcontext->render_complete[i]));
+		VK_CHECK(vkCreateSemaphore(vkcontext->device.logical_dev, &sem_info, NULL, &vkcontext->sync.render_complete[i]));
 	}
+	// Set initial signal semaphore value
+	vkcontext->sync.next_signal_value = MAX_FRAMES_IN_FLIGHT + 1;
 }

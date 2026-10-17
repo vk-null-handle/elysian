@@ -19,3 +19,4 @@ void vk_image_view_create(
 	VkImageAspectFlags aspect_flags);
 
 void vk_image_destroy(VulkanDevice* device, VulkanImage* image);
+void transition_image(VkCommandBuffer cmd_buffer, VkImage image, VkImageLayout old_layout, VkImageLayout new_layout);

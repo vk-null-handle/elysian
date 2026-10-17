@@ -10,15 +10,14 @@
 #include "vk_pipeline.h"
 #include "vk_sync.h"
 #include "vk_cmd_buffer.h"
+#include "vk_buffer.h"
+#include "vk_image.h"
 #include <vulkan/vulkan_core.h>
 
 // TEMP
 static VulkanContext vkcontext;
 
 b8 vulkan_backend_init(Window* window) {
-	// Set initial signal semaphore value
-	vkcontext.next_signal_value = MAX_FRAMES_IN_FLIGHT + 1;
-
 	static const char* layers[] = {"VK_LAYER_KHRONOS_validation"};
 	u32 n_instance_exts;
 	const char** exts = win_get_vk_instance_ext(&n_instance_exts);
@@ -71,14 +70,33 @@ b8 vulkan_backend_init(Window* window) {
 	vk_command_buffers_create(&vkcontext);
 	LOG_DEBUG("Created Vulkan command buffers and pool");
 
+	// https://docs.vulkan.org/refpages/latest/refpages/source/VkDrawIndirectCommand.html
+	VkDrawIndirectCommand draw_command = {
+		.vertexCount = 3,
+		.instanceCount = 1,
+		.firstVertex = 0,
+		.firstInstance = 0,
+	};
+
+	// Create indirect buffer
+	ASSERT(create_buffer(&vkcontext.device,
+						 sizeof(VkDrawIndirectCommand),
+						 VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT,
+						 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+						 &vkcontext.indirect_buffer));
+	// Map it to cpu memory
+	map_buffer(&vkcontext.device, &vkcontext.indirect_buffer, sizeof(draw_command));
+	mem_copy(vkcontext.indirect_buffer.mapped, &draw_command, sizeof(draw_command));
+	unmap_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
+
 	return TRUE;
 }
 
 void vulkan_backend_shutdown(void) {
 	VK_CHECK(vkDeviceWaitIdle(vkcontext.device.logical_dev));
 
-	if (vkcontext.timeline) {
-		vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.timeline, NULL);
+	if (vkcontext.sync.timeline) {
+		vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.sync.timeline, NULL);
 	}
 
 	for (u8 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
@@ -90,11 +108,11 @@ void vulkan_backend_shutdown(void) {
 
 	vk_pipeline_destroy(&vkcontext.device, &vkcontext.pipeline);
 
-	if (vkcontext.render_complete) {
+	if (vkcontext.sync.render_complete) {
 		for (u32 i = 0; i < vkcontext.swapchain.n_images; i++) {
-			vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.render_complete[i], NULL);
+			vkDestroySemaphore(vkcontext.device.logical_dev, vkcontext.sync.render_complete[i], NULL);
 		}
-		mem_free(vkcontext.render_complete, vkcontext.swapchain.n_images * sizeof(*vkcontext.render_complete));
+		mem_free(vkcontext.sync.render_complete, vkcontext.swapchain.n_images * sizeof(VkSemaphore));
 	}
 
 	vk_swapchain_destroy(&vkcontext.device, &vkcontext.swapchain);
@@ -103,6 +121,7 @@ void vulkan_backend_shutdown(void) {
 		vkDestroySurfaceKHR(vkcontext.instance.handle, vkcontext.surface, NULL);
 	};
 
+	destroy_buffer(&vkcontext.device, &vkcontext.indirect_buffer);
 	vk_device_destroy(&vkcontext.device);
 
 	if (vkcontext.instance.handle) {
@@ -127,10 +146,10 @@ void vulkan_backend_render_frame(Window* window) {
 	}
 
 	// Which frame's synchronization resources to use
-	u32 frame_res_index = vkcontext.frame_index++ % MAX_FRAMES_IN_FLIGHT;
+	u32 frame_res_index = vkcontext.sync.frame_index++ % MAX_FRAMES_IN_FLIGHT;
 	// Value current frame will set timeline semaphore when it completes,
 	// so that future frames know what to wait on until resources are avaliable
-	u64 signal_value = vkcontext.next_signal_value++;
+	u64 signal_value = vkcontext.sync.next_signal_value++;
 	// Value current frame will wait until it begins using the resources
 	const u64 wait_value = signal_value - MAX_FRAMES_IN_FLIGHT;
 
@@ -139,7 +158,7 @@ void vulkan_backend_render_frame(Window* window) {
 		.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
 		// Only waiting for the one semaphore
 		.semaphoreCount = 1,
-		.pSemaphores = &vkcontext.timeline,
+		.pSemaphores = &vkcontext.sync.timeline,
 		.pValues = &wait_value,
 	};
 	// Wiat for timeline semaphore to reach signal value
@@ -241,7 +260,7 @@ void vulkan_backend_render_frame(Window* window) {
 
 		// Draw triangle
 		vkCmdBindPipeline(frame_res->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkcontext.pipeline.handle);
-		vkCmdDraw(frame_res->command_buffer, 3, 1, 0, 0);
+		vkCmdDrawIndirect(frame_res->command_buffer, vkcontext.indirect_buffer.handle, 0, 1, sizeof(VkDrawIndirectCommand));
 	}
 
 	// End dynamic rendering
@@ -264,12 +283,12 @@ void vulkan_backend_render_frame(Window* window) {
 	VkSemaphoreSubmitInfo semaphore_signals[] = {
 		{// Render work completion signal
 		 .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-		 .semaphore = vkcontext.render_complete[image_index],
+		 .semaphore = vkcontext.sync.render_complete[image_index],
 		 .stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT},
 		{
 			// Entire frame is completed (timeline)
 			.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-			.semaphore = vkcontext.timeline,
+			.semaphore = vkcontext.sync.timeline,
 			.value = signal_value,
 			.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
 		},
@@ -296,7 +315,7 @@ void vulkan_backend_render_frame(Window* window) {
 	VkPresentInfoKHR present_info = {
 		.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 		.waitSemaphoreCount = 1,
-		.pWaitSemaphores = &vkcontext.render_complete[image_index], // Render work completed semaphore to set
+		.pWaitSemaphores = &vkcontext.sync.render_complete[image_index], // Render work completed semaphore to set
 		.swapchainCount = 1,
 		.pSwapchains = &vkcontext.swapchain.handle,
 		.pImageIndices = &image_index,

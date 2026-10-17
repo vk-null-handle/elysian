@@ -4,7 +4,7 @@
 #include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
-b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipeline) {
+b8 vk_graphics_pipeline_create(VulkanDevice* device, VkFormat* format, VulkanPipeline* out_pipeline) {
 	// Define pipeline layout
 	VkPipelineLayoutCreateInfo pipeline_layout_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -105,14 +105,12 @@ b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipelin
 	};
 
 	// Structure required for dynamic rendering
-	// TODO: REPLACE
-	VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 	VkPipelineRenderingCreateInfo render_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 		// Single color attachment (Swapchain)
 		.colorAttachmentCount = 1,
 		// Set swapchains color and devices depth formats
-		.pColorAttachmentFormats = &color_format,
+		.pColorAttachmentFormats = format,
 		.depthAttachmentFormat = device->depth_format,
 	};
 

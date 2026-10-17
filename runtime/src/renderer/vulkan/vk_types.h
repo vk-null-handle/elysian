@@ -4,25 +4,9 @@
 
 #define MAX_FRAMES_IN_FLIGHT 2
 
-typedef enum vulkan_cmd_buffer_state {
-  COMMAND_BUFFER_STATE_READY,
-  COMMAND_BUFFER_STATE_RECORDING,
-  COMMAND_BUFFER_STATE_RECORDING_ENDED,
-  COMMAND_BUFFER_STATE_IN_RENDERING,
-  COMMAND_BUFFER_STATE_RENDERING_ENDED,
-  COMMAND_BUFFER_STATE_SUBMITTED,
-  COMMAND_BUFFER_STATE_NOT_ALLOCATED
-} VulkanCmdBufferState;
-
-typedef struct vulkan_command_buffer {
-    VkCommandBuffer handle;
-    VulkanCmdBufferState state;
-} VulkanCmdBuffer;
-
 // Per frame resources
 typedef struct frame_resources {
-	VkCommandPool command_pool;
-	VulkanCmdBuffer command_buffer;
+	VkCommandBuffer command_buffer;
 	VkSemaphore image_acquired;
 } FrameResources;
 
@@ -75,6 +59,7 @@ typedef struct vulkan_device {
   VulkanSwapchainSupportInfo swapchain_info;
   
   VkFormat depth_format;
+	VkCommandPool command_pool;
 } VulkanDevice;
 
 typedef struct vulkan_instance {

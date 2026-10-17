@@ -44,7 +44,7 @@ b8 vulkan_backend_init(Window* window) {
 	VK_CHECK(win_create_vk_surface(window, vkcontext.instance.handle, &vkcontext.surface));
 	LOG_DEBUG("Created Vulkan surface");
 
-	ASSERT(vk_logical_dev_create(&vkcontext.device, vkcontext.surface, &vkcontext.instance));
+	ASSERT(vk_device_create(&vkcontext.device, vkcontext.surface, &vkcontext.instance));
 	LOG_DEBUG("Created Vulkan logical device");
 
 	VkExtent2D extent;
@@ -54,7 +54,7 @@ b8 vulkan_backend_init(Window* window) {
 		extent.height = 800;
 	}
 
-	vk_swapchain_create(&vkcontext.device, &vkcontext.swapchain, vkcontext.surface, &extent);
+	ASSERT(vk_swapchain_create(&vkcontext.device, &vkcontext.swapchain, vkcontext.surface, &extent));
 	LOG_DEBUG("Created Vulkan swapchain");
 
 	vkcontext.pipeline.vert_shader = vk_shader_load(&vkcontext.device, "shader_vert.glsl", shaderc_vertex_shader);
@@ -83,9 +83,6 @@ void vulkan_backend_shutdown(void) {
 		if (frame->image_acquired) {
 			vkDestroySemaphore(vkcontext.device.logical_dev, frame->image_acquired, NULL);
 		}
-		if (frame->command_pool) {
-			vkDestroyCommandPool(vkcontext.device.logical_dev, frame->command_pool, NULL);
-		}
 	}
 
 	vk_pipeline_destroy(&vkcontext.device, &vkcontext.pipeline);
@@ -97,19 +94,13 @@ void vulkan_backend_shutdown(void) {
 		mem_free(vkcontext.render_complete, vkcontext.swapchain.n_images * sizeof(*vkcontext.render_complete));
 	}
 
-	if (vkcontext.swapchain.handle) {
-		vk_swapchain_destroy(&vkcontext.device, &vkcontext.swapchain);
-	}
+	vk_swapchain_destroy(&vkcontext.device, &vkcontext.swapchain);
 
 	if (vkcontext.surface) {
 		vkDestroySurfaceKHR(vkcontext.instance.handle, vkcontext.surface, NULL);
 	};
 
-	if (vkcontext.device.logical_dev) {
-		vkDestroyDevice(vkcontext.device.logical_dev, NULL);
-	}
-	mem_free(vkcontext.device.swapchain_info.formats, sizeof(VkSurfaceFormatKHR) * vkcontext.device.swapchain_info.n_formats);
-	mem_free(vkcontext.device.swapchain_info.present_modes, sizeof(VkPresentModeKHR) * vkcontext.device.swapchain_info.n_present_modes);
+	vk_device_destroy(&vkcontext.device);
 
 	if (vkcontext.instance.handle) {
 		vkDestroyInstance(vkcontext.instance.handle, NULL);

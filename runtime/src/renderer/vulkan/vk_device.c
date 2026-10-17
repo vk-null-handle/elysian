@@ -3,6 +3,7 @@
 #include "core/assert.h"
 #include "core/logger.h"
 #include "core/memory.h"
+#include "renderer/vulkan/vk_types.h"
 #include "renderer/vulkan/vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
@@ -77,7 +78,7 @@ void vk_device_query_swapchain_support_info(VkSurfaceKHR surface, VulkanDevice* 
 	}
 }
 
-b8 vk_logical_dev_create(VulkanDevice* device, VkSurfaceKHR surface, VulkanInstance* instance) {
+b8 vk_device_create(VulkanDevice* device, VkSurfaceKHR surface, VulkanInstance* instance) {
 	if (!find_phys_dev(instance, device)) {
 		LOG_ERROR("Failed to find appropriate physical device");
 		return FALSE;
@@ -164,5 +165,24 @@ b8 vk_logical_dev_create(VulkanDevice* device, VkSurfaceKHR surface, VulkanInsta
 	// TODO: Device depth format checking
 	device->depth_format = VK_FORMAT_D32_SFLOAT;
 
+	// https://docs.vulkan.org/refpages/latest/refpages/source/VkCommandPoolCreateInfo.html
+	VkCommandPoolCreateInfo pool_info = {
+		.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		.queueFamilyIndex = device->gfx_queue_fam_idx,
+	};
+	VK_CHECK(vkCreateCommandPool(device->logical_dev, &pool_info, NULL, &device->command_pool));
+
 	return TRUE;
+}
+
+void vk_device_destroy(VulkanDevice* device) {
+	if (device->command_pool) {
+		vkDestroyCommandPool(device->logical_dev, device->command_pool, NULL);
+	}
+	if (device->logical_dev) {
+		vkDestroyDevice(device->logical_dev, NULL);
+	}
+	mem_free(device->swapchain_info.formats, sizeof(VkSurfaceFormatKHR) * device->swapchain_info.n_formats);
+	mem_free(device->swapchain_info.present_modes, sizeof(VkPresentModeKHR) * device->swapchain_info.n_present_modes);
 }

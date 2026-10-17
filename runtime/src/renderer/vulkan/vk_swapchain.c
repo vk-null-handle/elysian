@@ -21,7 +21,7 @@ void vk_swapchain_destroy(VulkanDevice* device, VulkanSwapchain* swapchain) {
 	vkDestroySwapchainKHR(device->logical_dev, swapchain->handle, NULL);
 }
 
-void vk_swapchain_create(VulkanDevice* device, VulkanSwapchain* swapchain, VkSurfaceKHR surface, VkExtent2D* extent) {
+b8 vk_swapchain_create(VulkanDevice* device, VulkanSwapchain* swapchain, VkSurfaceKHR surface, VkExtent2D* extent) {
 	swapchain->width = extent->width;
 	swapchain->height = extent->height;
 	// Get device support info
@@ -134,4 +134,6 @@ void vk_swapchain_create(VulkanDevice* device, VulkanSwapchain* swapchain, VkSur
 		TRUE,
 		VK_IMAGE_ASPECT_DEPTH_BIT,
 		&swapchain->depth_image);
+
+	return TRUE;
 }

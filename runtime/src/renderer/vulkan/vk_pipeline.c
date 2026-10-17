@@ -1,9 +1,10 @@
 #include "vk_pipeline.h"
 #include "core/logger.h"
-#include "renderer/vulkan/vk_utils.h"
+#include "vk_types.h"
+#include "vk_utils.h"
 #include <vulkan/vulkan_core.h>
 
-VkPipeline vk_graphics_pipeline_create(VulkanContext* vkcontext) {
+b8 vk_graphics_pipeline_create(VulkanDevice* device, VulkanPipeline* out_pipeline, VkAllocationCallbacks* allocator) {
 	// Define pipeline layout
 	VkPipelineLayoutCreateInfo pipeline_layout_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -11,7 +12,7 @@ VkPipeline vk_graphics_pipeline_create(VulkanContext* vkcontext) {
 		.setLayoutCount = 0,
 		.pushConstantRangeCount = 0,
 	};
-	VK_CHECK(vkCreatePipelineLayout(vkcontext->device.logical_dev, &pipeline_layout_info, vkcontext->allocator, &vkcontext->pipeline.layout));
+	VK_CHECK(vkCreatePipelineLayout(device->logical_dev, &pipeline_layout_info, allocator, &out_pipeline->layout));
 
 	// Define main shader function
 	const char* entry_point = "main";
@@ -20,13 +21,13 @@ VkPipeline vk_graphics_pipeline_create(VulkanContext* vkcontext) {
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			.stage = VK_SHADER_STAGE_VERTEX_BIT,
-			.module = vkcontext->vert_shader,
+			.module = out_pipeline->vert_shader,
 			.pName = entry_point,
 		},
 		{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 			.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.module = vkcontext->frag_shader,
+			.module = out_pipeline->frag_shader,
 			.pName = entry_point,
 		},
 	};
@@ -104,13 +105,15 @@ VkPipeline vk_graphics_pipeline_create(VulkanContext* vkcontext) {
 	};
 
 	// Structure required for dynamic rendering
+	// TODO: REPLACE
+	VkFormat color_format = VK_FORMAT_R8G8B8A8_UNORM;
 	VkPipelineRenderingCreateInfo render_info = {
 		.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
 		// Single color attachment (Swapchain)
 		.colorAttachmentCount = 1,
 		// Set swapchains color and devices depth formats
-		.pColorAttachmentFormats = &vkcontext->swapchain.image_format.format,
-		.depthAttachmentFormat = vkcontext->device.depth_format,
+		.pColorAttachmentFormats = &color_format,
+		.depthAttachmentFormat = device->depth_format,
 	};
 
 	// Create the graphics pipeline
@@ -137,13 +140,31 @@ VkPipeline vk_graphics_pipeline_create(VulkanContext* vkcontext) {
 		// Set viewport and scissor states to be dynamic
 		.pDynamicState = &dynamic_state_info,
 		// Created pipeline layout not expecting and descriptor sets or push constants
-		.layout = vkcontext->pipeline.layout,
+		.layout = out_pipeline->layout,
 		// Disabled render passes
 		.renderPass = VK_NULL_HANDLE,
 	};
 
-	VkPipeline pipeline;
-	VK_CHECK(vkCreateGraphicsPipelines(vkcontext->device.logical_dev, NULL, 1, &pipeline_info, vkcontext->allocator, &pipeline));
+	VK_CHECK(vkCreateGraphicsPipelines(device->logical_dev, NULL, 1, &pipeline_info, allocator, &out_pipeline->handle));
 
-	return pipeline;
+	return TRUE;
+}
+
+void vk_pipeline_destroy(VulkanDevice* device, VulkanPipeline* pipeline, VkAllocationCallbacks* allocator) {
+	if (pipeline->vert_shader) {
+		vkDestroyShaderModule(device->logical_dev, pipeline->vert_shader, allocator);
+	}
+	if (pipeline->frag_shader) {
+		vkDestroyShaderModule(device->logical_dev, pipeline->frag_shader, allocator);
+	}
+	if (pipeline->comp_shader) {
+		vkDestroyShaderModule(device->logical_dev, pipeline->comp_shader, allocator);
+	}
+
+	if (pipeline->layout) {
+		vkDestroyPipelineLayout(device->logical_dev, pipeline->layout, allocator);
+	}
+	if (pipeline->handle) {
+		vkDestroyPipeline(device->logical_dev, pipeline->handle, allocator);
+	}
 }

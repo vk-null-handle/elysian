@@ -60,13 +60,9 @@ b8 vulkan_backend_init(Window* window) {
 	vk_swapchain_create(&vkcontext, &vkcontext.swapchain, width, height);
 	LOG_DEBUG("Created Vulkan swapchain");
 
-	vkcontext.vert_shader = vk_shader_load(&vkcontext, "shader_vert.glsl", shaderc_vertex_shader);
-	vkcontext.frag_shader = vk_shader_load(&vkcontext, "shader_frag.glsl", shaderc_fragment_shader);
-	ASSERT(vkcontext.frag_shader || vkcontext.vert_shader);
-	LOG_DEBUG("Compiled and loaded Vulkan shaders");
-
-	vkcontext.pipeline.handle = vk_graphics_pipeline_create(&vkcontext);
-	ASSERT(vkcontext.pipeline.handle)
+	vkcontext.pipeline.vert_shader = vk_shader_load(&vkcontext, "shader_vert.glsl", shaderc_vertex_shader);
+	vkcontext.pipeline.frag_shader = vk_shader_load(&vkcontext, "shader_frag.glsl", shaderc_fragment_shader);
+	ASSERT(vk_graphics_pipeline_create(&vkcontext.device, &vkcontext.pipeline, vkcontext.allocator));
 	LOG_DEBUG("Created Vulkan graphics pipeline");
 
 	vk_sync_resources_create(&vkcontext);
@@ -95,19 +91,7 @@ void vulkan_backend_shutdown(void) {
 		}
 	}
 
-	if (vkcontext.pipeline.layout) {
-		vkDestroyPipelineLayout(vkcontext.device.logical_dev, vkcontext.pipeline.layout, vkcontext.allocator);
-	}
-	if (vkcontext.pipeline.handle) {
-		vkDestroyPipeline(vkcontext.device.logical_dev, vkcontext.pipeline.handle, vkcontext.allocator);
-	}
-
-	if (vkcontext.vert_shader) {
-		vkDestroyShaderModule(vkcontext.device.logical_dev, vkcontext.vert_shader, vkcontext.allocator);
-	}
-	if (vkcontext.frag_shader) {
-		vkDestroyShaderModule(vkcontext.device.logical_dev, vkcontext.frag_shader, vkcontext.allocator);
-	}
+	vk_pipeline_destroy(&vkcontext.device, &vkcontext.pipeline, vkcontext.allocator);
 
 	if (vkcontext.render_complete) {
 		for (u32 i = 0; i < vkcontext.swapchain.n_images; i++) {

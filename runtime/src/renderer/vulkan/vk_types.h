@@ -27,10 +27,13 @@ typedef struct frame_resources {
 	VkSemaphore image_acquired;
 } FrameResources;
 
-// TODO: Store shader and pipeline togther
 typedef struct vulkan_pipeline {
   VkPipeline handle;
   VkPipelineLayout layout;
+  // Shaders
+  VkShaderModule vert_shader;
+  VkShaderModule comp_shader;
+  VkShaderModule frag_shader;
 } VulkanPipeline;
 
 typedef struct vulkan_image {
@@ -85,10 +88,6 @@ typedef struct vulkan_instance {
 typedef struct vulkan_context {
   VkAllocationCallbacks* allocator;
   VkSurfaceKHR surface;
-
-  // Shaders
-  VkShaderModule vert_shader;
-  VkShaderModule frag_shader;
 
   VkSemaphore timeline;
   u64 next_signal_value;

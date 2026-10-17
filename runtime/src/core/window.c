@@ -36,8 +36,8 @@ b8 win_should_close(const Window* window) {
 	return glfwWindowShouldClose(window->handle);
 }
 
-void win_get_framebuffer_size(Window* window, i32* out_width, i32* out_height) {
-	glfwGetFramebufferSize(window->handle, out_width, out_height);
+void win_get_framebuffer_size(Window* window, u32* out_width, u32* out_height) {
+	glfwGetFramebufferSize(window->handle, (i32*)out_width, (i32*)out_height);
 }
 
 void win_poll_events(void) {

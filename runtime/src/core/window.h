@@ -11,7 +11,7 @@ b8 win_init(u32 width, u32 height, char *title, Window *out_window);
 void win_shutdown(Window *window);
 
 b8 win_should_close(const Window *window);
-void win_get_framebuffer_size(Window *window, i32 *out_width, i32 *out_height);
+void win_get_framebuffer_size(Window* window, u32* out_width, u32* out_height);
 void win_poll_events(void);
 
 b8 win_create_vk_surface(Window* window, VkInstance instance, VkSurfaceKHR* out_surface);
